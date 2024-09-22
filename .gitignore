@@ -1,0 +1,12 @@
+﻿
+# Executables
+*.out
+*.app
+/.vs
+/.vscode
+
+# Directory
+/build
+/bin
+/install
+/lib
