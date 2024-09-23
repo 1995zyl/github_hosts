@@ -2,7 +2,7 @@
 #include "log/log.h"
 #include <fstream>
 #include <regex>
-
+#include <set>
 
 namespace
 {
@@ -17,7 +17,6 @@ namespace
 
 const static std::string gBaseUrl("https://www.ipaddress.com/website/");
 }
-
 
 GithubHosts::GithubHosts()
     : m_threadPoolPtr(new ThreadPool(std::thread::hardware_concurrency()))
@@ -133,7 +132,12 @@ bool GithubHosts::updateHostFile()
     {
         std::string ipStr = parseIpByHtml(iter->second.get());
         if (!ipStr.empty())
+        {
+            ipStr.append(std::string(30 - ipStr.length(), ' '));
+            ipStr.append(iter->first);
+            ipStr.append("\n");
             fputs(ipStr.c_str(), fp2);
+        }
     }
     fputs(PrefixTail, fp2);
     fclose(fp1);
@@ -146,7 +150,7 @@ bool GithubHosts::updateHostFile()
 
 std::string GithubHosts::parseIpByHtml(const std::string& htmlText)
 {
-    std::vector<std::string> ipList;
+    std::set<std::string> ipSet;
     std::regex pattern("((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
     std::smatch result;
     std::string::const_iterator iterStart = htmlText.begin();
@@ -154,13 +158,44 @@ std::string GithubHosts::parseIpByHtml(const std::string& htmlText)
     while (std::regex_search(iterStart, iterEnd, result, pattern))
     {
         std::string ip = result[0];
-        ipList.push_back(ip);
+        ipSet.insert(ip);
         iterStart = result[0].second;
     }
 
-    if (ipList.empty())
+    if (ipSet.empty())
         return "";
 
-    return ipList[0];
+    std::string bestIp;
+    int minDuration = INT_MAX;
+    for (const auto& ip : ipSet)
+    {
+        std::string pingStr("ping -n 1 ");
+        pingStr.append(ip);
+        FILE* pipe = _popen(pingStr.c_str(), "r");
+        if (!pipe)
+            continue;
 
+        std::vector<char> buffer(128);
+        std::string pingInfo;
+        while (!feof(pipe))
+        {
+            if (fgets(buffer.data(), buffer.size(), pipe)) 
+                pingInfo.append(buffer.data());
+        }
+        _pclose(pipe);
+
+        size_t index = pingInfo.find_last_of(" = ");
+        if (std::string::npos == index)
+            continue;
+        std::string subStr = pingInfo.substr(index);
+        subStr.erase(subStr.end() - 3, subStr.end());
+        int num = atoi(subStr.c_str());
+        if (num < minDuration)
+        {
+            bestIp = ip;
+            minDuration = num;
+        }
+    }
+
+    return bestIp;
 }
