@@ -15,7 +15,8 @@ private:
     ~GithubHosts();
     bool getUrlNames(std::vector<std::string>& urlNames);
     std::string getIpByUrl(const std::string& suffixUrl);
-    bool updateHostFile(const std::vector<std::string>& urlNames, std::vector<std::future<std::string>>& htmlTextList);
+    bool updateHostFile(int taskCount, const std::vector<std::string>& urlNames, 
+        std::vector<std::future<std::string>>& htmlTextList);
     std::string parseIpByHtml(const std::string& htmlText);
     int getAverageTimeByPingIp(const std::string& ip);
 

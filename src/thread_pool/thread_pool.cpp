@@ -1,9 +1,9 @@
 #include "thread_pool.h"
 
-ThreadPool::ThreadPool(size_t numThreads)
-	: m_bStop(false)
+ThreadPool::ThreadPool(size_t threadCount)
+	: m_bStop(false), m_threadCount(threadCount)
 {
-	for (size_t i = 0; i < numThreads; ++i)
+	for (size_t i = 0; i < m_threadCount; ++i)
 	{
 		m_workers.emplace_back([this] 
 		{

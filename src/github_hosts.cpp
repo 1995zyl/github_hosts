@@ -46,13 +46,14 @@ bool GithubHosts::updateGithubHosts()
         return false;
     }
 
+    int taskCount = urlNames.size() / (m_threadPoolPtr->getThreadNum() + 1);
     std::vector<std::future<std::string>> htmlTextList;
-    for (auto url : urlNames)
+    for (int i = taskCount; i < urlNames.size(); ++i)
     {
-        htmlTextList.emplace_back(m_threadPoolPtr->enqueue(&GithubHosts::getIpByUrl, this, url));
+        htmlTextList.emplace_back(m_threadPoolPtr->enqueue(&GithubHosts::getIpByUrl, this, urlNames[i]));
     }
 
-    if (!updateHostFile(urlNames, htmlTextList))
+    if (!updateHostFile(taskCount, urlNames, htmlTextList))
     {
         CONSOLE_ERROR("update host file failed!");
         return false;
@@ -91,7 +92,7 @@ std::string GithubHosts::getIpByUrl(const std::string& suffixUrl)
     return std::string(response.response);
 }
 
-bool GithubHosts::updateHostFile(const std::vector<std::string>& urlNames, 
+bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& urlNames,
     std::vector<std::future<std::string>>& htmlTextList)
 {
     FILE* fp1 = fopen(HostsFilePath, "r");
@@ -101,7 +102,7 @@ bool GithubHosts::updateHostFile(const std::vector<std::string>& urlNames,
         return false;
     }
 
-    std::string tempFile = std::string(HostsFilePath) + "_temp";
+    std::string tempFile = std::string(PROJECT_SOURCE_DIR) + "/temp.txt";
     FILE* fp2 = fopen(tempFile.c_str(), "w");
     if (!fp2)
     {
@@ -126,9 +127,14 @@ bool GithubHosts::updateHostFile(const std::vector<std::string>& urlNames,
 
     fputs("\n", fp2);
     fputs(PrefixHead, fp2);
+    CONSOLE_INFO("start update gitHub Host ip address...");
     for (int i = 0; i < urlNames.size(); ++i)
     {
-        std::string ipStr = parseIpByHtml(htmlTextList[i].get());
+        std::string ipStr;
+        if (i < taskCount)
+            ipStr = parseIpByHtml(getIpByUrl(urlNames[i]));
+        else
+            ipStr = parseIpByHtml(htmlTextList[i - taskCount].get());
         if (!ipStr.empty())
         {
             ipStr.append(std::string(30 - ipStr.length(), ' '));
@@ -177,24 +183,29 @@ std::string GithubHosts::parseIpByHtml(const std::string& htmlText)
     if (ipList.empty())
         return "";
 
+    int taskCount = ipList.size() / (m_threadPoolPtr->getThreadNum() + 1);
     std::vector<std::future<int>> pingTimeList;
-    for (int i = 1; i < ipList.size(); ++i)
+    for (int i = taskCount; i < ipList.size(); ++i)
     {
         pingTimeList.emplace_back(m_threadPoolPtr->enqueue(&GithubHosts::getAverageTimeByPingIp, this, ipList[i]));
     }
 
-    std::string bestIp = ipList[0];
-    int minPingTime = getAverageTimeByPingIp(ipList[0]);
-    for (int i = 0; i < pingTimeList.size(); ++i)
+    std::string bestIp;
+    int minPingTime = INT_MAX;
+    for (int i = 0; i < ipList.size(); ++i)
     {
-        int pingTime = pingTimeList[i].get();
+        int pingTime = INT_MAX;
+        if (i < taskCount)
+            pingTime = getAverageTimeByPingIp(ipList[i]);
+        else
+            pingTime = pingTimeList[i - taskCount].get();
         if (pingTime < minPingTime)
         {
-            bestIp = ipList[i + 1];
+            bestIp = ipList[i];
             minPingTime = pingTime;
         }
     }
-    return minPingTime != INT_MAX ? bestIp : "";
+    return bestIp;
 }
 
 int GithubHosts::getAverageTimeByPingIp(const std::string& ip)

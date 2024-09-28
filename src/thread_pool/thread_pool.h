@@ -8,8 +8,9 @@
 class ThreadPool 
 {
 public:
-    ThreadPool(size_t numThreads);
+    ThreadPool(size_t threadCount);
     ~ThreadPool();
+    int getThreadNum() { return m_threadCount; }
 
     template <class F, class... Args>
     auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> 
@@ -26,6 +27,7 @@ public:
     }
 	
 private:
+    size_t m_threadCount = 0;
     std::vector<std::thread> m_workers;
     std::queue<std::function<void()>> m_tasks;
     std::mutex m_queueMutex;

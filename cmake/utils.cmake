@@ -13,3 +13,31 @@
         endforeach(sgbd_file)
     endif(MSVC)
 endmacro(source_group_by_dir)
+
+macro(link_and_install_libcurl)
+    if(NOT DEFINED LIBCURL_PATH)
+        message(FATAL_ERROR "LIBCURL_PATH is not defined!!!")
+    endif()
+
+    target_include_directories(${TARGET} PRIVATE "${LIBCURL_PATH}/include")
+    if(WIN32)
+        if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+            target_link_libraries(${TARGET} PRIVATE "${LIBCURL_PATH}/lib/libcurl_debug.lib")
+            add_custom_command(TARGET ${TARGET} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                    "${LIBCURL_PATH}/bin/libcurl_debug.dll"
+                    "${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}"
+            )
+            INSTALL(FILES "${LIBCURL_PATH}/bin/libcurl_debug.dll" DESTINATION ${CMAKE_INSTALL_PREFIX})
+        else()
+            target_link_libraries(${TARGET} PRIVATE "${LIBCURL_PATH}/lib/libcurl.lib")
+            add_custom_command(TARGET ${TARGET} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                    "${LIBCURL_PATH}/bin/libcurl.dll"
+                    "${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}"
+            )
+            INSTALL(FILES "${LIBCURL_PATH}/bin/libcurl.dll" DESTINATION ${CMAKE_INSTALL_PREFIX})
+        endif()
+    elseif (UNIX)
+        target_link_libraries(${TARGET} PRIVATE pthread)
+        target_link_libraries(${TARGET} PRIVATE ${LIBCURL_PATH}/lib64/libcurl.so)
+    endif ()
+endmacro(link_and_install_libcurl)
