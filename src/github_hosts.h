@@ -13,15 +13,14 @@ public:
 private:
     GithubHosts();
     ~GithubHosts();
-    bool getUrlNames();
+    bool getUrlNames(std::vector<std::string>& urlNames);
     std::string getIpByUrl(const std::string& suffixUrl);
-    bool updateHostFile();
+    bool updateHostFile(const std::vector<std::string>& urlNames, std::vector<std::future<std::string>>& htmlTextList);
     std::string parseIpByHtml(const std::string& htmlText);
+    int getAverageTimeByPingIp(const std::string& ip);
 
 private:
     std::unique_ptr<ThreadPool> m_threadPoolPtr;
-    std::vector<std::string> m_urlNames;
-    std::unordered_map<std::string, std::future<std::string>> m_urlAndIps;
 };
 
 #endif
