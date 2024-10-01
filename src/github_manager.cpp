@@ -88,7 +88,7 @@ std::string GithubHosts::getIpByUrl(const std::string &suffixUrl)
     if (!m_HttpClientPtr->getResquestToStruct(response, ""))
         return "";
 
-    return std::string(response.response);
+    return parseIpByHtml(response.response);
 }
 
 bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string> &urlNames,
@@ -133,9 +133,9 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string> &
     {
         std::string ipStr;
         if (i < taskCount)
-            ipStr = parseIpByHtml(getIpByUrl(urlNames[i]));
+            ipStr = getIpByUrl(urlNames[i]);
         else
-            ipStr = parseIpByHtml(htmlTextList[i - taskCount].get());
+            ipStr = htmlTextList[i - taskCount].get();
         if (!ipStr.empty())
         {
             ipStr.append(std::string(30 - ipStr.length(), ' '));
@@ -187,22 +187,11 @@ std::string GithubHosts::parseIpByHtml(const std::string &htmlText)
     if (ipList.empty())
         return "";
 
-    int taskCount = ipList.size() / (m_threadPoolPtr->getThreadNum() + 1);
-    std::vector<std::future<int>> pingTimeList;
-    for (int i = taskCount; i < ipList.size(); ++i)
-    {
-        pingTimeList.emplace_back(m_threadPoolPtr->enqueue(&GithubHosts::getAverageTimeByPingIp, this, ipList[i]));
-    }
-
     std::string bestIp;
     int minPingTime = INT_MAX;
     for (int i = 0; i < ipList.size(); ++i)
     {
-        int pingTime = INT_MAX;
-        if (i < taskCount)
-            pingTime = getAverageTimeByPingIp(ipList[i]);
-        else
-            pingTime = pingTimeList[i - taskCount].get();
+        int pingTime = getAverageTimeByPingIp(ipList[i]);
         if (pingTime < minPingTime)
         {
             bestIp = ipList[i];
