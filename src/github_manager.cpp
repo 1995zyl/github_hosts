@@ -125,7 +125,7 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string> &
     }
 
     TimeHelper nowTime = TimeHelper::currentTime();
-    if (strcmp(buff, "\n") != 0)
+    if (strcmp(buff, "\n") != 0 && strcmp(buff, SUFFIX_TAIL) != 0)
         fputs("\n", fp2);
     fputs(PREFIX_HEAD, fp2);
     CONSOLE_INFO("start update gitHub Host ip address...");
