@@ -15,12 +15,12 @@
 endmacro(source_group_by_dir)
 
 macro(link_and_install_libcurl)
-    if(NOT DEFINED LIBCURL_PATH)
-        message(FATAL_ERROR "LIBCURL_PATH is not defined!!!")
-    endif()
-
-    target_include_directories(${TARGET} PRIVATE "${LIBCURL_PATH}/include")
     if(WIN32)
+        if(NOT DEFINED LIBCURL_PATH)
+            message(FATAL_ERROR "LIBCURL_PATH is not defined!!!")
+        endif()
+
+        target_include_directories(${TARGET} PRIVATE "${LIBCURL_PATH}/include")
         if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             target_link_libraries(${TARGET} PRIVATE "${LIBCURL_PATH}/lib/libcurl_debug.lib")
             add_custom_command(TARGET ${TARGET} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
@@ -37,7 +37,6 @@ macro(link_and_install_libcurl)
             INSTALL(FILES "${LIBCURL_PATH}/bin/libcurl.dll" DESTINATION ${CMAKE_INSTALL_PREFIX})
         endif()
     elseif (UNIX)
-        target_link_libraries(${TARGET} PRIVATE pthread)
-        target_link_libraries(${TARGET} PRIVATE ${LIBCURL_PATH}/lib64/libcurl.so)
+        target_link_libraries(${TARGET} PRIVATE curl)
     endif ()
 endmacro(link_and_install_libcurl)

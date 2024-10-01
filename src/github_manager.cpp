@@ -6,7 +6,7 @@
 
 namespace
 {
-#define GITHUB_URL    "/github_url.txt"
+#define GITHUB_URL "/github_url.txt"
 #ifdef WIN32
 #define HOSTS_FILE_PATH "C:/Windows/System32/drivers/etc/HOSTS"
 #else
@@ -16,23 +16,21 @@ namespace
 #define SUFFIX_TAIL "# GitHub Host End\n"
 #define UPDATE_TIME "# Update Time: "
 
-const static std::string gBaseUrl("https://www.ipaddress.com/website/");
-const static std::string gSignAText("<h3>A<span> Records</span></h3>");
-const static std::string gSignAAAAText("<h3>AAAA<span> Records</span></h3>");
+    const static std::string gBaseUrl("https://www.ipaddress.com/website/");
+    const static std::string gSignAText("<h3>A<span> Records</span></h3>");
+    const static std::string gSignAAAAText("<h3>AAAA<span> Records</span></h3>");
 }
 
 GithubHosts::GithubHosts()
     : m_threadPoolPtr(new ThreadPool(std::thread::hardware_concurrency()))
 {
-
 }
 
 GithubHosts::~GithubHosts()
 {
-
 }
 
-GithubHosts* GithubHosts::instance()
+GithubHosts *GithubHosts::instance()
 {
     static GithubHosts instance;
     return &instance;
@@ -41,7 +39,7 @@ GithubHosts* GithubHosts::instance()
 bool GithubHosts::updateGithubHosts()
 {
     std::vector<std::string> urlNames;
-    if(!getUrlNames(urlNames))
+    if (!getUrlNames(urlNames))
     {
         CONSOLE_ERROR("url names is empty!");
         return false;
@@ -63,12 +61,12 @@ bool GithubHosts::updateGithubHosts()
     return true;
 }
 
-bool GithubHosts::getUrlNames(std::vector<std::string>& urlNames)
+bool GithubHosts::getUrlNames(std::vector<std::string> &urlNames)
 {
     std::regex regex("\\s|\n");
     std::string github_url_path(std::string(PROJECT_SOURCE_DIR) + GITHUB_URL);
     std::ifstream file(github_url_path);
-    if (file.is_open()) 
+    if (file.is_open())
     {
         std::string line;
         while (std::getline(file, line))
@@ -83,7 +81,7 @@ bool GithubHosts::getUrlNames(std::vector<std::string>& urlNames)
     return !urlNames.empty();
 }
 
-std::string GithubHosts::getIpByUrl(const std::string& suffixUrl)
+std::string GithubHosts::getIpByUrl(const std::string &suffixUrl)
 {
     std::unique_ptr<HttpClient> m_HttpClientPtr(new HttpClient(gBaseUrl + suffixUrl));
     HttpClient::ResponseData response;
@@ -93,10 +91,10 @@ std::string GithubHosts::getIpByUrl(const std::string& suffixUrl)
     return std::string(response.response);
 }
 
-bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& urlNames,
-    std::vector<std::future<std::string>>& htmlTextList)
+bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string> &urlNames,
+                                 std::vector<std::future<std::string>> &htmlTextList)
 {
-    FILE* fp1 = fopen(HOSTS_FILE_PATH, "r");
+    FILE *fp1 = fopen(HOSTS_FILE_PATH, "r");
     if (!fp1)
     {
         CONSOLE_ERROR("open file(read) error. file: %s", HOSTS_FILE_PATH);
@@ -104,7 +102,7 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& 
     }
 
     std::string tempFile = std::string(PROJECT_SOURCE_DIR) + "/temp.txt";
-    FILE* fp2 = fopen(tempFile.c_str(), "w");
+    FILE *fp2 = fopen(tempFile.c_str(), "w");
     if (!fp2)
     {
         CONSOLE_ERROR("open file(write) error. file: %s", tempFile.c_str());
@@ -112,7 +110,7 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& 
     }
 
     bool isInGithub = false;
-    char buff[1024] = { 0 };
+    char buff[1024] = {0};
     while (fgets(buff, sizeof(buff) - 1, fp1) != nullptr)
     {
         if (strcmp(buff, PREFIX_HEAD) == 0)
@@ -127,7 +125,8 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& 
     }
 
     TimeHelper nowTime = TimeHelper::currentTime();
-    fputs("\n", fp2);
+    if (strcmp(buff, "\n") != 0)
+        fputs("\n", fp2);
     fputs(PREFIX_HEAD, fp2);
     CONSOLE_INFO("start update gitHub Host ip address...");
     for (int i = 0; i < urlNames.size(); ++i)
@@ -159,7 +158,7 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& 
     return !rename(tempFile.c_str(), HOSTS_FILE_PATH);
 }
 
-std::string GithubHosts::parseIpByHtml(const std::string& htmlText)
+std::string GithubHosts::parseIpByHtml(const std::string &htmlText)
 {
     if (htmlText.empty())
         return "";
@@ -213,11 +212,15 @@ std::string GithubHosts::parseIpByHtml(const std::string& htmlText)
     return bestIp;
 }
 
-int GithubHosts::getAverageTimeByPingIp(const std::string& ip)
+int GithubHosts::getAverageTimeByPingIp(const std::string &ip)
 {
     std::string pingStr("ping -n 2 ");
     pingStr.append(ip);
-    FILE* pipe = _popen(pingStr.c_str(), "r");
+#ifdef WIN32
+    FILE *pipe = _popen(pingStr.c_str(), "r");
+#else
+    FILE *pipe = popen(pingStr.c_str(), "r");
+#endif
     if (!pipe)
         return INT_MAX;
 
@@ -228,7 +231,11 @@ int GithubHosts::getAverageTimeByPingIp(const std::string& ip)
         if (fgets(buffer.data(), buffer.size(), pipe))
             pingInfo.append(buffer.data());
     }
+#ifdef WIN32
     _pclose(pipe);
+#else
+    pclose(pipe);
+#endif
 
     size_t index = pingInfo.find_last_of(" = ");
     if (std::string::npos == index)
