@@ -18,6 +18,22 @@
 #include <memory>
 #include <mutex>
 
+class TimeHelper : public std::tm
+{
+public:
+    std::string toString() const;
+    std::string toStringForFilename() const;
+    static TimeHelper currentTime();
+
+private:
+    TimeHelper();
+    TimeHelper(const std::tm &_tm, int _tm_millisec, int _tm_microsec);
+
+private:
+    int tm_millisec; // 毫秒
+    int tm_microsec; // 微秒
+};
+
 class Log
 {
 public:

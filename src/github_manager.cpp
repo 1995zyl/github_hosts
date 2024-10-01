@@ -1,4 +1,4 @@
-﻿#include "github_hosts.h"
+﻿#include "github_manager.h"
 #include "log/log.h"
 #include <fstream>
 #include <regex>
@@ -8,12 +8,13 @@ namespace
 {
 #define GITHUB_URL    "/github_url.txt"
 #ifdef WIN32
-#define HostsFilePath "C:/Windows/System32/drivers/etc/HOSTS"
+#define HOSTS_FILE_PATH "C:/Windows/System32/drivers/etc/HOSTS"
 #else
-#define HostsFilePath "/etc/hosts"
+#define HOSTS_FILE_PATH "/etc/hosts"
 #endif
-#define PrefixHead "# GitHub Host Begin\n"
-#define SuffixTail "# GitHub Host End\n"
+#define PREFIX_HEAD "# GitHub Host Begin\n"
+#define SUFFIX_TAIL "# GitHub Host End\n"
+#define UPDATE_TIME "# Update Time: "
 
 const static std::string gBaseUrl("https://www.ipaddress.com/website/");
 const static std::string gSignAText("<h3>A<span> Records</span></h3>");
@@ -95,10 +96,10 @@ std::string GithubHosts::getIpByUrl(const std::string& suffixUrl)
 bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& urlNames,
     std::vector<std::future<std::string>>& htmlTextList)
 {
-    FILE* fp1 = fopen(HostsFilePath, "r");
+    FILE* fp1 = fopen(HOSTS_FILE_PATH, "r");
     if (!fp1)
     {
-        CONSOLE_ERROR("open file(read) error. file: %s", HostsFilePath);
+        CONSOLE_ERROR("open file(read) error. file: %s", HOSTS_FILE_PATH);
         return false;
     }
 
@@ -114,9 +115,9 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& 
     char buff[1024] = { 0 };
     while (fgets(buff, sizeof(buff) - 1, fp1) != nullptr)
     {
-        if (strcmp(buff, PrefixHead) == 0)
+        if (strcmp(buff, PREFIX_HEAD) == 0)
             isInGithub = true;
-        else if (strcmp(buff, SuffixTail) == 0)
+        else if (strcmp(buff, SUFFIX_TAIL) == 0)
         {
             isInGithub = false;
             continue;
@@ -125,8 +126,9 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& 
             fputs(buff, fp2);
     }
 
+    TimeHelper nowTime = TimeHelper::currentTime();
     fputs("\n", fp2);
-    fputs(PrefixHead, fp2);
+    fputs(PREFIX_HEAD, fp2);
     CONSOLE_INFO("start update gitHub Host ip address...");
     for (int i = 0; i < urlNames.size(); ++i)
     {
@@ -144,14 +146,17 @@ bool GithubHosts::updateHostFile(int taskCount, const std::vector<std::string>& 
             fputs(ipStr.c_str(), fp2);
         }
     }
-    fputs(SuffixTail, fp2);
+    std::string updateTime(UPDATE_TIME);
+    updateTime.append(nowTime.toString());
+    updateTime.append("\n");
+    fputs(updateTime.c_str(), fp2);
+    fputs(SUFFIX_TAIL, fp2);
 
     fclose(fp1);
     fclose(fp2);
-    remove(HostsFilePath);
-    rename(tempFile.c_str(), HostsFilePath);
 
-    return true;
+    remove(HOSTS_FILE_PATH);
+    return !rename(tempFile.c_str(), HOSTS_FILE_PATH);
 }
 
 std::string GithubHosts::parseIpByHtml(const std::string& htmlText)

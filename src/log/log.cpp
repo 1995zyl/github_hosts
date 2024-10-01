@@ -29,85 +29,6 @@ namespace
 
 #define LOG_BUFFER_SIZE     2048
 
-class TimeHelper : public std::tm
-{
-public:
-    std::string toString() const
-    {
-        char temp[27]{0};
-        snprintf(temp,
-                 27,
-                 "%04d-%02d-%02d %02d:%02d:%02d.%03d%03d",
-                 tm_year + 1900,
-                 tm_mon + 1,
-                 tm_mday,
-                 tm_hour,
-                 tm_min,
-                 tm_sec,
-                 tm_millisec,
-                 tm_microsec);
-        return std::string(temp);
-    }
-
-    std::string toStringForFilename() const
-    {
-        char temp[23]{0};
-        snprintf(temp,
-                 23,
-                 "%04d%02d%02d_%02d%02d%02d.%03d%03d",
-                 tm_year + 1900,
-                 tm_mon + 1,
-                 tm_mday,
-                 tm_hour,
-                 tm_min,
-                 tm_sec,
-                 tm_millisec,
-                 tm_microsec);
-        return std::string(temp);
-    }
-
-    static TimeHelper currentTime()
-    {
-        // 从1970-01-01 00:00:00到当前时间点的时长
-        auto duration_since_epoch = std::chrono::system_clock::now().time_since_epoch();
-
-        // 将时长转换为微秒数
-        auto microseconds_since_epoch = std::chrono::duration_cast<std::chrono::microseconds>(duration_since_epoch).count();
-
-        // 将时长转换为秒数
-        time_t seconds_since_epoch = static_cast<time_t>(microseconds_since_epoch / 1000000);
-
-#if defined _MSC_VER && _MSC_VER >= 1400
-        TimeHelper exact_time;
-        localtime_s(&exact_time, &seconds_since_epoch);
-        exact_time.tm_microsec = static_cast<int>(microseconds_since_epoch % 1000);
-        exact_time.tm_millisec = static_cast<int>(microseconds_since_epoch / 1000 % 1000);
-#elif defined __GNUC__
-        TimeHelper exact_time;
-        localtime_r(&seconds_since_epoch, &exact_time);
-        exact_time.tm_microsec = static_cast<int>(microseconds_since_epoch % 1000);
-        exact_time.tm_millisec = static_cast<int>(microseconds_since_epoch / 1000 % 1000);
-#else
-#error "Unknown compiler"
-#endif
-
-        return exact_time;
-    }
-
-private:
-    TimeHelper()
-        : tm_millisec(0), tm_microsec(0)
-    {
-    }
-    TimeHelper(const std::tm &_tm, int _tm_millisec, int _tm_microsec)
-        : std::tm(_tm), tm_millisec(_tm_millisec), tm_microsec(_tm_microsec)
-    {
-    }
-
-    int tm_millisec; // 毫秒
-    int tm_microsec; // 微秒
-};
-
 static char gConsoleColors[Log::LOG_LEVEL_COUNT][256] =
 {
     BLUE,
@@ -118,6 +39,80 @@ static char gConsoleColors[Log::LOG_LEVEL_COUNT][256] =
 
 }
 
+std::string TimeHelper::toString() const
+{
+    char temp[27]{0};
+    snprintf(temp,
+                27,
+                "%04d-%02d-%02d %02d:%02d:%02d.%03d%03d",
+                tm_year + 1900,
+                tm_mon + 1,
+                tm_mday,
+                tm_hour,
+                tm_min,
+                tm_sec,
+                tm_millisec,
+                tm_microsec);
+    return std::string(temp);
+}
+
+std::string TimeHelper::toStringForFilename() const
+{
+    char temp[23]{0};
+    snprintf(temp,
+                23,
+                "%04d%02d%02d_%02d%02d%02d.%03d%03d",
+                tm_year + 1900,
+                tm_mon + 1,
+                tm_mday,
+                tm_hour,
+                tm_min,
+                tm_sec,
+                tm_millisec,
+                tm_microsec);
+    return std::string(temp);
+}
+
+TimeHelper TimeHelper::currentTime()
+{
+    // 从1970-01-01 00:00:00到当前时间点的时长
+    auto duration_since_epoch = std::chrono::system_clock::now().time_since_epoch();
+
+    // 将时长转换为微秒数
+    auto microseconds_since_epoch = std::chrono::duration_cast<std::chrono::microseconds>(duration_since_epoch).count();
+
+    // 将时长转换为秒数
+    time_t seconds_since_epoch = static_cast<time_t>(microseconds_since_epoch / 1000000);
+
+#if defined _MSC_VER && _MSC_VER >= 1400
+    TimeHelper exact_time;
+    localtime_s(&exact_time, &seconds_since_epoch);
+    exact_time.tm_microsec = static_cast<int>(microseconds_since_epoch % 1000);
+    exact_time.tm_millisec = static_cast<int>(microseconds_since_epoch / 1000 % 1000);
+#elif defined __GNUC__
+    TimeHelper exact_time;
+    localtime_r(&seconds_since_epoch, &exact_time);
+    exact_time.tm_microsec = static_cast<int>(microseconds_since_epoch % 1000);
+    exact_time.tm_millisec = static_cast<int>(microseconds_since_epoch / 1000 % 1000);
+#else
+#error "Unknown compiler"
+#endif
+
+    return exact_time;
+}
+
+TimeHelper::TimeHelper()
+    : tm_millisec(0), tm_microsec(0)
+{
+}
+
+TimeHelper::TimeHelper(const std::tm &_tm, int _tm_millisec, int _tm_microsec)
+    : std::tm(_tm), tm_millisec(_tm_millisec), tm_microsec(_tm_microsec)
+{
+}
+
+
+/// @brief 
 Log::Log() 
     : m_bufPtr(new char[LOG_BUFFER_SIZE]{0})
 {
