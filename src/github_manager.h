@@ -14,14 +14,16 @@ private:
     GithubHosts();
     ~GithubHosts();
     bool getUrlNames(std::vector<std::string> &urlNames);
-    std::string getIpByUrl(const std::string &suffixUrl);
-    bool updateHostFile(int taskCount, const std::vector<std::string> &urlNames,
-                        std::vector<std::future<std::string>> &htmlTextList);
-    std::string parseIpByHtml(const std::string &htmlText);
+    void getIpByUrl(std::vector<std::string> chunk);
+    void parseIpByHtml(const std::vector<std::string>& suffixUrls);
+    bool updateHostFile(std::vector<std::future<void>> &ipList);
     int getAverageTimeByPingIp(const std::string &ip);
 
 private:
     std::unique_ptr<ThreadPool> m_threadPoolPtr;
+    std::unordered_map<std::string, std::string> m_urlAndIps;
+    std::mutex m_mutex;
+    std::string m_tempDir;
 };
 
 #endif
