@@ -1,3 +1,0 @@
-[submodule "3rdparty/ucoro"]
-	path = 3rdparty/ucoro
-	url = https://github.com/avplayer/ucoro.git
