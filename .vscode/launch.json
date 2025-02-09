@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug with MSBuild",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/Debug/github_hosts.exe", // 替换为你的实际可执行文件名称
+      "args": [
+        "--listen_addr=121.40.205.124:4000",
+        "--port=4000",
+        "--idle_timeout_s=60"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": false
+    }
+  ]
+}

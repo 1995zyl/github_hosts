@@ -51,7 +51,7 @@ private:
 	};
 
 	static size_t writeCallbackFunc(void *data, size_t size, size_t nmemb, void *userp);
-	void setOption(const std::vector<void *> &requestDatas, DataMode mode, std::function<void(int, bool)> callback);
+	void setOption(const std::vector<void *> &responses, DataMode mode, std::function<void(int, bool)> callback);
 
 private:
 	std::vector<std::string> m_urls;

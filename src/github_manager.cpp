@@ -248,7 +248,7 @@ bool GithubHosts::updateHostFile(std::vector<std::future<void>> &ipList)
     fputs(PREFIX_HEAD, fp2);
     for (int i = 0; i < ipList.size(); ++i)
     {
-        ipList[i].get();
+        ipList[i].wait();
     }
 
     for (const auto& iter : m_urlAndIps)

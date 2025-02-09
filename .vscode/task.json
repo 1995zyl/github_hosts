@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+      {
+          "label": "msbuild",
+          "type": "shell",
+          "command": "D:\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\msbuild",
+          "args": [
+              "/p:Configuration=Debug",
+              "/p:Platform=x64",
+              "${workspaceFolder}/build/src/github_hosts.vcxproj"
+          ],
+          "group": {
+              "kind": "build",
+              "isDefault": true
+          },
+          "problemMatcher": "$msCompile"
+      }
+  ]
+}

@@ -3,10 +3,10 @@
 *.out
 *.app
 /.vs
-/.vscode
 
 # Directory
 /build
 /bin
 /install
 /lib
+/temp_html_dir
